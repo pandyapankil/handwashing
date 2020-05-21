@@ -102,6 +102,9 @@ var app = (function () {
     function add_render_callback(fn) {
         render_callbacks.push(fn);
     }
+    function add_flush_callback(fn) {
+        flush_callbacks.push(fn);
+    }
     let flushing = false;
     const seen_callbacks = new Set();
     function flush() {
@@ -171,6 +174,14 @@ var app = (function () {
                 }
             });
             block.o(local);
+        }
+    }
+
+    function bind(component, name, callback) {
+        const index = component.$$.props[name];
+        if (index !== undefined) {
+            component.$$.bound[index] = callback;
+            callback(component.$$.ctx[index]);
         }
     }
     function create_component(block) {
@@ -363,13 +374,26 @@ var app = (function () {
     	let t0;
     	let t1;
     	let t2;
+    	let updating_progress;
     	let t3;
     	let div1;
     	let button;
     	let t4;
     	let current;
     	let dispose;
-    	const progressbar = new ProgressBar({ props: { progress: /*progress*/ ctx[2] } });
+
+    	function progressbar_progress_binding(value) {
+    		/*progressbar_progress_binding*/ ctx[5].call(null, value);
+    	}
+
+    	let progressbar_props = {};
+
+    	if (/*progress*/ ctx[2] !== void 0) {
+    		progressbar_props.progress = /*progress*/ ctx[2];
+    	}
+
+    	const progressbar = new ProgressBar({ props: progressbar_props });
+    	binding_callbacks.push(() => bind(progressbar, "progress", progressbar_progress_binding));
 
     	return {
     		c() {
@@ -409,7 +433,13 @@ var app = (function () {
     		p(ctx, [dirty]) {
     			if (!current || dirty & /*secondsLeft*/ 1) set_data(t1, /*secondsLeft*/ ctx[0]);
     			const progressbar_changes = {};
-    			if (dirty & /*progress*/ 4) progressbar_changes.progress = /*progress*/ ctx[2];
+
+    			if (!updating_progress && dirty & /*progress*/ 4) {
+    				updating_progress = true;
+    				progressbar_changes.progress = /*progress*/ ctx[2];
+    				add_flush_callback(() => updating_progress = false);
+    			}
+
     			progressbar.$set(progressbar_changes);
 
     			if (!current || dirty & /*isRunning*/ 2) {
@@ -464,7 +494,19 @@ var app = (function () {
     		);
     	}
 
-    	return [secondsLeft, isRunning, progress, startTimer];
+    	function progressbar_progress_binding(value) {
+    		progress = value;
+    		$$invalidate(2, progress);
+    	}
+
+    	return [
+    		secondsLeft,
+    		isRunning,
+    		progress,
+    		startTimer,
+    		dispatch,
+    		progressbar_progress_binding
+    	];
     }
 
     class Timer extends SvelteComponent {
