@@ -1,6 +1,6 @@
 <script>
 	import ProgressBar from './ProgressBar.svelte';
-	const totalSeconds = 5;
+	const totalSeconds = 20;
 	let secondsLeft = totalSeconds;
 	let isRunning = false;
 	let progress = 0;
