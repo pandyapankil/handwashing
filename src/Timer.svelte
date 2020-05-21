@@ -44,7 +44,7 @@
 		Seconds Left: {secondsLeft}
 	</h2>
 </div>
-<ProgressBar {progress}/>
+<ProgressBar bind:progress/>
 
 <div bp="grid">
 	<button disabled={isRunning} bp="offset-5@md 4@md 12@sm" class="start" on:click={startTimer}>Start</button>
